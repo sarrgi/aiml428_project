@@ -38,7 +38,7 @@ def read_data(url):
     return data
 
 
-def construct_model():
+def construct_model(vocab_size, embedding_dim, word_vectors, maxlen):
     model = Sequential()
     model.add(layers.Embedding(vocab_size,
                                embedding_dim,
@@ -56,25 +56,15 @@ def construct_model():
 
     return model
 
-def model_chunk(vocab_size, maxlen, embedding_dim, train_seq_x, test_seq_x, train_y, test_y, word_vectors):
-    # define model
-    model = Sequential()
-    model.add(layers.Embedding(vocab_size, embedding_dim,
-                               weights=[word_vectors],
-                               input_length=maxlen,
-                               trainable=False))
-    model.add(layers.Conv1D(128, 5, activation='relu'))
-    model.add(layers.GlobalMaxPool1D())
-    model.add(layers.Dense(16, activation='relu'))
-    model.add(layers.Dense(1, activation='sigmoid'))
-    print(model.summary())
-    # compile network
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+def train_model(model, train_seq_x, test_seq_x, train_y, test_y):
     # fit network
     model.fit(train_seq_x, train_y, epochs=10, verbose=2)
+
     # evaluate
     loss, acc = model.evaluate(test_seq_x, test_y, verbose=0)
     print('Test Accuracy: %f' % (acc*100))
+
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -120,7 +110,9 @@ if __name__ == "__main__":
     maxlen=70
     embedding_dim=50
 
-    model_chunk(vocab_size, maxlen, embedding_dim, train_seq_x, test_seq_x, train_y, test_y, word_vectors)
+    model = construct_model(vocab_size, embedding_dim, word_vectors, maxlen)
+    train_model(model, train_seq_x, test_seq_x, train_y, test_y)
 
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+
+    print("Full time take: %s seconds." % round((time.time() - start_time), 2))
