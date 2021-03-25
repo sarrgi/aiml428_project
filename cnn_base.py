@@ -152,7 +152,8 @@ if __name__ == "__main__":
         vocab_size = len(tokenizer.word_index) + 1
 
         # load the pretrained glove model into a matrix (file stored locally)
-        embedding_matrix = create_embedding_matrix(r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt",
+        # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
+        embedding_matrix = create_embedding_matrix("glove\glove.6B.50d.txt",
                                                    tokenizer.word_index,
                                                    embedding_dim,
                                                    vocab_size)
