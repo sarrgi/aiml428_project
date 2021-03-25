@@ -65,7 +65,7 @@ def plot_history(history):
     plt.plot(x, val_loss, 'r', label='Validation loss')
     plt.title('Training and validation loss')
     plt.legend()
-
+    #
     plt.show()
 
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
         # load the pretrained glove model into a matrix (file stored locally)
         # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-        embedding_matrix = create_embedding_matrix("glove\glove.6B.50d.txt",
+        embedding_matrix = create_embedding_matrix("glove/glove.6B.50d.txt",
                                                    tokenizer.word_index,
                                                    embedding_dim,
                                                    vocab_size)
@@ -165,11 +165,11 @@ if __name__ == "__main__":
         model = create_model(vocab_size, embedding_dim, setence_len, embedding_matrix)
 
         # summarize model architecture
-        # model.summary()
+        model.summary()
 
         # train the model
         history = model.fit(X_train, y_train, epochs=10, verbose=False, validation_data=(X_test, y_test), batch_size=10)
 
         # evaluate model
         evaluate_model(model, X_train, y_train, X_test, y_test)
-        # plot_history(history)
+        plot_history(history)
