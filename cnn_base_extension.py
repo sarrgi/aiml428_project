@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-
 import numpy as np
+import glob
+import os
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
@@ -109,7 +110,34 @@ def calculate_nonzero(embedding_matrix, vocab_size):
     return nonzero_elements / vocab_size
 
 
+def read_data(location):
+    for filename in glob.glob(location):
+        print(filename)
+
+
+
+
 if __name__ == "__main__":
+
+
+    test_en = read_data("data/pandata/test/en/*.xml")
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # original baseline below
+    exit(1)
+
+
     # datset locations
     filepath_dict = {'yelp':   'data/yelp_labelled.txt',
                      'amazon': 'data/amazon_cells_labelled.txt',
