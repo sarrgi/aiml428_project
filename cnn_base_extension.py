@@ -5,6 +5,7 @@ import glob
 import os
 import xml.etree.ElementTree as et
 import re
+import math
 try:
     import cPickle as pickle
 except:
@@ -214,10 +215,55 @@ if __name__ == "__main__":
     es_train_truth =  parse_truth_table("data/pandata/truth-tables/es-truth-train.txt")
 
     # get longest tweet
-    max = get_longest_input(test_en + train_en + test_en + train_es)
-    print("mill:", max)
+    max_tweet = get_longest_input(test_en + train_en + test_en + train_es)
+    # set length to pad sentences to (zeros at end of vector) (round to next hundred)
+    sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
 
 
+    # TODO: create target arrays with truth table
+
+    exit(1)
+
+    # set embedding dim size (must match glove file...)
+    embedding_dim = 50
+
+    # create tokenizer (note: num_words specifies the top n words to keep)
+    tokenizer = Tokenizer(num_words=5000)
+    tokenizer.fit_on_texts(train_en)
+
+    # convert sentences to integers (tokens)
+    X_train = tokenizer.texts_to_sequences(train_en)
+    X_test = tokenizer.texts_to_sequences(test_en)
+
+    # pad sentences so theyre all the same length
+    X_train = pad_sequences(X_train, padding='post', maxlen=sentence_len)
+    X_test = pad_sequences(X_test, padding='post', maxlen=sentence_len)
+
+    # store length of vocab (for model params and embedding matrix calcs)
+    vocab_size = len(tokenizer.word_index) + 1
+
+    # load the pretrained glove model into a matrix (file stored locally)
+    # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
+    embedding_matrix = create_embedding_matrix("glove/glove.6B.50d.txt",
+                                               tokenizer.word_index,
+                                               embedding_dim,
+                                               vocab_size)
+
+    # Calculate the amount of words covered by GloVe
+    print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
+
+    # Create the model
+    model = create_model(vocab_size, embedding_dim, setence_len, embedding_matrix)
+
+    # summarize model architecture
+    model.summary()
+
+    # train the model
+    history = model.fit(X_train, y_train, epochs=10, verbose=False, validation_data=(X_test, y_test), batch_size=10)
+
+    # evaluate model
+    evaluate_model(model, X_train, y_train, X_test, y_test)
+    plot_history(history)
 
     # original baseline below
     exit(1)
