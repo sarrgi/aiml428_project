@@ -73,7 +73,7 @@ if __name__ == "__main__":
     data = read_data('https://ecs.wgtn.ac.nz/foswiki/pub/Courses/AIML428_2021T1/LectureSchedule/simple-review.csv')
     # print(data)
 
-    # load pretrained glove model
+    # load pretrained glove model (stored locally)
     raw_embedding = load_embedding('glove/glove.6B.50d.txt')
 
     # split the dataset into training and validation datasets
@@ -84,7 +84,6 @@ if __name__ == "__main__":
     train_y = encoder.fit_transform(train_y)
     test_y = encoder.fit_transform(test_y)
     print(train_x[0:10])
-
 
     # set up token
     token = text.Tokenizer()
