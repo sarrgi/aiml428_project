@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
+import xml.etree.ElementTree as et
+import re
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
@@ -110,27 +117,105 @@ def calculate_nonzero(embedding_matrix, vocab_size):
     return nonzero_elements / vocab_size
 
 
+def parse_file_name(str):
+    """
+    Removes excess path characters from file path, so that you are left with just the file name.
+    """
+    name = re.search("[a-zA-Z0-9]*\.xml", str).group(0)
+    removed_extension = name[:-4]
+    return removed_extension
+
+def parse_truth_table(location):
+    f = open(location, "r")
+    lines = f.readlines()
+
+    dicts = []
+    for line in lines:
+        split = line.split(":::")
+        d = {}
+        d['file'] = split[0]
+        d['target'] = split[1]
+        d['sub_class'] = split[2][:-1] #remove \n character
+
+        dicts.append(d)
+
+    return dicts
+
+
+
 def read_data(location):
+    all_tweets = []
     for filename in glob.glob(location):
-        print(filename)
+        with open(os.path.join(os.getcwd(), filename), "r", encoding="utf8") as file:
+            # set first object in list to filename
+            tweets = [parse_file_name(filename)]
+
+            # parse xml document into list
+            root = et.parse(file).getroot()
+            for documents in root:
+                for tweet in documents:
+                    text = tweet.text
+                    tweets.append(text)
+
+            # append all files list
+            all_tweets.append(tweets)
+    return all_tweets
 
 
 
+
+def get_emoji_dict():
+    #  https://studymachinelearning.com/text-preprocessing-handle-emoji-emoticon/
+    with open('Emoji_Dict.p', 'rb') as fp:
+        emoji_dict = pickle.load(fp)
+    emoji_dict = {v: k for k, v in emoji_dict.items()}
+    return emoji_dict
+
+def convert_emojis_to_word(text, emoji_dict):
+    for emot in emoji_dict:
+        text = re.sub(r'('+emot+')', "_".join(emoji_dict[emot].replace(",","").replace(":","").split()), text)
+    return text
+
+def clean_emojis(location, emoji_dict):
+    for filename in glob.glob(location):
+        with open(os.path.join(os.getcwd(), filename), "r", encoding="utf8") as file:
+            # print(filename)
+
+
+
+            text = file.read()
+            # convert_emojis_to_word(text, emoji_dict)
+            # print(type(lines))
+
+    return -1
+
+
+def get_longest_input(input_arr):
+    max = -1
+    for t in input_arr:
+        for tt in t:
+            if len(tt) > max:
+                max = len(tt)
+
+    return max
 
 if __name__ == "__main__":
 
-
+    # read in data
     test_en = read_data("data/pandata/test/en/*.xml")
+    train_en = read_data("data/pandata/train/en/*.xml")
+    test_es = read_data("data/pandata/test/es/*.xml")
+    train_es = read_data("data/pandata/train/es/*.xml")
 
+    # read in truth tables
+    en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
+    en_train_truth =  parse_truth_table("data/pandata/truth-tables/en-truth-train.txt")
+    es_test_truth = parse_truth_table("data/pandata/truth-tables/es-test.txt")
+    es_train_truth =  parse_truth_table("data/pandata/truth-tables/es-truth-train.txt")
 
-
-
-
-
-
-
-
-
+    # get longest tweet
+    max = get_longest_input(test_en + train_en + test_en + train_es)
+    print("mill:", max)
 
 
 

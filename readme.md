@@ -7,3 +7,7 @@ Notes:
 - currently has the accuracy plot and model summary details displaying. This can be disabled by commenting out ```plt.show()``` and ```model.summary()``` respectively.
 - this also uses the datasets from the same tutorial, which have been included in the ```data/``` folder. This means the model is running three times; one for each dataset.
 - this model is not currently set up  to run on GPUs. (Mainly due to difficulties working with the cuda library versions on ecs machines)
+
+
+TODO:
+- investigate emoji handling fictionary from [this](https://studymachinelearning.com/text-preprocessing-handle-emoji-emoticon/) website.
