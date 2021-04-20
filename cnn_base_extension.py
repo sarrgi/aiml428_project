@@ -99,7 +99,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
     model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
     model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
     return model
 
@@ -272,10 +272,13 @@ def get_longest_input(input_arr):
     return max
 
 if __name__ == "__main__":
+    print(tf.config.list_physical_devices('GPU'))
+    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+    print(tf.test.is_built_with_cuda())
 
     # read in data
-    test_en = read_data("data/pandata/test/en/*.xml")
-    train_en = read_data("data/pandata/train/en/*.xml")
+    test_en = read_data("data/pandata/test/en/*.xml")[:50]
+    train_en = read_data("data/pandata/train/en/*.xml")[:50]
     # test_es = read_data("data/pandata/test/es/*.xml")
     # train_es = read_data("data/pandata/train/es/*.xml")
 
@@ -306,7 +309,7 @@ if __name__ == "__main__":
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
-    sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
+    sentence_len = 100 #int(math.ceil(max_tweet / 100.0)) * 100
 
     # print(len(test_en_input), len(train_en_input), len(test_es_input), len(train_es_input))
     # print(len(test_en_targets), len(train_en_targets), len(test_es_targets), len(train_es_targets))
@@ -351,6 +354,6 @@ if __name__ == "__main__":
 
     # evaluate model
     evaluate_model(model, train_en_input, train_en_targets, test_en_input, test_en_targets)
-    plot_history(history)
+    # plot_history(history)
 
     exit(1)
