@@ -97,7 +97,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
     model.add(layers.Conv1D(128, 5, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
-    model.add(layers.Dense(1, activation='sigmoid'))
+    model.add(layers.Dense(3, activation='sigmoid'))
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
@@ -226,11 +226,11 @@ def create_targets(input, truth_table):
             raise create_targets("err", "err")
         else:
             if targ == "male":
-                targs.append(0)
+                targs.append([1,0,0])
             elif targ == "female":
-                targs.append(1)
+                targs.append([0,1,0])
             elif targ == "bot":
-                targs.append(2)
+                targs.append([0,0,1])
 
     return targs
 
@@ -247,7 +247,7 @@ def flatten_input(input):
 
 def flatten_targets(targets, repeat_len):
     size = len(targets) * repeat_len
-    flat = np.zeros(size, dtype=np.int64)
+    flat = np.zeros((size, 3), dtype=np.int64)
 
     idx = 0
     for t in targets:
@@ -272,6 +272,7 @@ def get_longest_input(input_arr):
     return max
 
 if __name__ == "__main__":
+    # gpu log check
     print(tf.config.list_physical_devices('GPU'))
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
     print(tf.test.is_built_with_cuda())
@@ -309,7 +310,7 @@ if __name__ == "__main__":
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
-    sentence_len = 100 #int(math.ceil(max_tweet / 100.0)) * 100
+    sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
 
     # print(len(test_en_input), len(train_en_input), len(test_es_input), len(train_es_input))
     # print(len(test_en_targets), len(train_en_targets), len(test_es_targets), len(train_es_targets))
