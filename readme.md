@@ -72,8 +72,9 @@ Slight changes made to baseline method:
 
 
 
-
 ### Part 3:
+
+TODO: potentially convert to 500 data size
 
 ##### pre-processing:
 - https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-981-15-5558-9_17
@@ -81,12 +82,27 @@ Slight changes made to baseline method:
 ![pre](images/paper-preprocessing.jpg)
 
 
+- https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-3-030-60975-7_2
+- NLTK package for stop words
+We applied lower casing and removed punctuation, stopwords, urls and mentions
+
 
 ##### obvious issues:
 - overtraining on data
 - Percent of vocabulary covered by GloVe: 0.5173520077273355
 
 ##### Changes made:
+
+preprocessing
+- handling of urls
+- handling of @mentions
+- lowercase conversion
+- removal of stopwords
+
+model:
+- added dropout layer to help combat overfitting
+
+
 
 
 ##### Performance:

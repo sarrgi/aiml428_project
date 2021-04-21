@@ -7,13 +7,16 @@ import xml.etree.ElementTree as et
 import re
 import math
 from itertools import chain
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import tensorflow as tf
 try:
     import cPickle as pickle
 except:
     import pickle
 
 from tensorflow.keras import backend as K
-import tensorflow as tf
 
 
 from sklearn.model_selection import train_test_split
@@ -97,6 +100,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
     model.add(layers.Conv1D(128, 5, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
+    model.add(layers.Dropout(0.1))
     model.add(layers.Dense(3, activation='sigmoid'))
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
@@ -265,18 +269,47 @@ def remove_urls(input):
     return input
 
 
+def convert_mentions(input):
+    """
+    Convert all username mentions.
+    """
+    for i in range(len(input)):
+        input[i] = re.sub(r"@[a-zA-Z0-9\_]+", "username", input[i])
 
+    return input
+
+
+def remove_stopwords(input):
+    """
+    Remove all stop words from input.
+    """
+    stop_words = set(stopwords.words('english'))
+
+    for i in range(len(input)):
+        # remove stop words
+        word_tokens = word_tokenize(input[i])
+        filtered_sentence = [w for w in word_tokens if not w in stop_words]
+        # convert back to single sentence
+        complete_sentence = " ".join(filtered_sentence)
+        # store
+        input[i] = filtered_sentence
+
+    return input
 
 
 if __name__ == "__main__":
+    # required downloads to make nltk stopwords library work
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
     # gpu log check
     print(tf.config.list_physical_devices('GPU'))
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
     print(tf.test.is_built_with_cuda())
 
     # read in data
-    test_en = read_data("data/pandata/test/en/*.xml")[:100]
-    train_en = read_data("data/pandata/train/en/*.xml")[:100]
+    test_en = read_data("data/pandata/test/en/*.xml") [:500]
+    train_en = read_data("data/pandata/train/en/*.xml") [:500]
 
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
@@ -287,8 +320,9 @@ if __name__ == "__main__":
     train_en_targets = create_targets(train_en, en_train_truth)
 
     # flatten input
-    test_en_input = np.array(flatten_input(test_en))
-    train_en_input = np.array(flatten_input(train_en))
+    # np.array()
+    test_en_input = flatten_input(test_en)
+    train_en_input = flatten_input(train_en)
 
     # flatten targets
     test_en_targets = flatten_targets(test_en_targets, len(test_en[0]))
@@ -303,12 +337,24 @@ if __name__ == "__main__":
     train_en_input = remove_urls(train_en_input)
     # exit(1)
 
+    # remove mentions
+    test_en_input = convert_mentions(test_en_input)
+    train_en_input = convert_mentions(train_en_input)
+
+    # remove stop words
+    test_en_input = remove_stopwords(test_en_input)
+    train_en_input = remove_stopwords(train_en_input)
+
+
+
+    # print(test_en_input)
+    # exit(1)
+
     # ideas:
 
-
-    # remove stopwords
     # remove emojis
     # remove punctuation
+    # convert slang
 
 
     # get longest tweet
@@ -348,7 +394,7 @@ if __name__ == "__main__":
 
     # load the pretrained glove model into a matrix (file stored locally)
     # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-    embedding_matrix = create_embedding_matrix("glove/train_only_100_min_1.txt",
+    embedding_matrix = create_embedding_matrix("glove/glove.6B.50d.txt",
                                                tokenizer.word_index,
                                                embedding_dim,
                                                vocab_size)
