@@ -14,7 +14,7 @@ if __name__ == "__main__":
         train_en[i] = train_en[i][1:]
 
     # create one list
-    all_in = test_en + train_en
+    all_in = train_en + test_en
     flattened = list(chain.from_iterable(all_in))
 
     # create single string

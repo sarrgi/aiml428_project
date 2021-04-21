@@ -256,6 +256,8 @@ if __name__ == "__main__":
     test_en = read_data("data/pandata/test/en/*.xml")[:100]
     train_en = read_data("data/pandata/train/en/*.xml")[:100]
 
+
+
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
     en_train_truth =  parse_truth_table("data/pandata/truth-tables/en-truth.txt")
@@ -305,8 +307,15 @@ if __name__ == "__main__":
     embedding_dim = 50
 
     # create tokenizer (note: num_words specifies the top n words to keep)
-    tokenizer = Tokenizer(num_words=5000)
+    tokenizer = Tokenizer(num_words=28987)
     tokenizer.fit_on_texts(train_en_input)
+
+    # print(tokenizer.word_index)
+    # with open('huh.txt', 'w') as f:
+    #     for item in tokenizer.word_index:
+    #         f.write("%s " % item)
+    #
+    # exit(1)
 
     # convert sentences to integers (tokens)
     train_en_input = tokenizer.texts_to_sequences(train_en_input)
@@ -321,7 +330,7 @@ if __name__ == "__main__":
 
     # load the pretrained glove model into a matrix (file stored locally)
     # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-    embedding_matrix = create_embedding_matrix("glove/full_corp.txt",
+    embedding_matrix = create_embedding_matrix("glove/full_corp_min_1.txt",
                                                tokenizer.word_index,
                                                embedding_dim,
                                                vocab_size)
