@@ -316,6 +316,26 @@ if __name__ == "__main__":
     # print(len(test_en_targets), len(train_en_targets), len(test_es_targets), len(train_es_targets))
     # exit(1)
 
+
+    # split test into validation and test
+    # test_en_input, val_en_input, test_en_targets, val_en_targets = train_test_split(test_en_input, test_en_targets, test_size=0.5, random_state=1000)
+    # split = int(len(test_en_input)/2)
+    # test_en_input_1 = test_en_input[:split]
+    # val_en_input = test_en_input[split:]
+    # test_en_targets_1 = test_en_targets[:split]
+    # val_en_targets = test_en_targets[split:]
+
+    # print(len(test_en_input_1))
+    # print("-")
+    # print(len(val_en_input))
+    # print("-")
+    # print(len(test_en_targets_1))
+    # print("-")
+    # print(len(val_en_targets))
+    # print("-")
+
+
+
     # set embedding dim size (must match glove file...)
     embedding_dim = 50
 

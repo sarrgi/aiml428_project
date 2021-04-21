@@ -21,14 +21,18 @@ Running on amazon, yelp and imdb data.
 
 ### Part 2:
 
-Note: for the sake of time and simplicity this model is only being tested on the first 50 files in the pandata dataset.
+Note: for the sake of time and simplicity this model is only being tested on the first 100 files in the pandata dataset.
 
 Slight changes made to baseline method:
   - Model is now using ```categorical_crossentropy``` as the loss function, due to there now being three classes (```binary_crossentropy``` would no longer make sense).
   - Output layer in model is now of size 3, reflective of this new loss function.
+  - split test data into validation and test data (so model isnt learning via test)
 
-##### Performance:
-![performance_part_2](images/part2_performance.png)
+##### Performance (no val):
+![performance_part_2](images/part2_performance_no_val_split.png)
+
+<!-- ##### Performance (val):
+![performance_part_2](images/part2_performance_val_split.png) -->
 
 ##### Model:
 ![model_part_2](images/part2_model.png)
