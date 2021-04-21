@@ -11,3 +11,38 @@ Notes:
 
 TODO:
 - investigate emoji handling fictionary from [this](https://studymachinelearning.com/text-preprocessing-handle-emoji-emoticon/) website.
+
+
+
+### Part 1
+
+Can be found in submissions folder.
+Running on amazon, yelp and imdb data.
+
+### Part 2:
+
+Note: for the sake of time and simplicity this model is only being tested on the first 50 files in the pandata dataset.
+
+Slight changes made to baseline method:
+  - Model is now using ```categorical_crossentropy``` as the loss function, due to there now being three classes (```binary_crossentropy``` would no longer make sense).
+  - Output layer in model is now of size 3, reflective of this new loss function.
+
+##### Performance:
+![performance_part_2](images/part2_performance.png)
+
+##### Model:
+![model_part_2](images/part2_model.png)
+
+
+
+
+### Part 3:
+
+##### obvious issues:
+- overtraining on data
+- Percent of vocabulary covered by GloVe: 0.5173520077273355
+
+##### Changes made:
+
+
+##### Performance:
