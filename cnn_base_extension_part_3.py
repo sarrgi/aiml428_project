@@ -23,11 +23,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
+
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.backend import clear_session
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import RandomizedSearchCV
 
 def create_embedding_matrix(filepath, word_index, embedding_dim, vocab_size):
     """
@@ -98,6 +101,21 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
                                 weights=[word_vecs],
                                 trainable=True))
     model.add(layers.Conv1D(128, 5, activation='relu'))
+    model.add(layers.GlobalMaxPooling1D())
+    model.add(layers.Dense(10, activation='relu'))
+    model.add(layers.Dropout(0.1))
+    model.add(layers.Dense(3, activation='sigmoid'))
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+
+
+def create_model_hyper_tuning(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
+    model = Sequential()
+    model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
+    model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dropout(0.1))
@@ -345,26 +363,16 @@ if __name__ == "__main__":
     test_en_input = remove_stopwords(test_en_input)
     train_en_input = remove_stopwords(train_en_input)
 
-
-
-    # print(test_en_input)
-    # exit(1)
-
     # ideas:
 
     # remove emojis
     # remove punctuation
     # convert slang
 
-
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
     sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
-
-    # print(len(test_en_input), len(train_en_input), len(test_es_input), len(train_es_input))
-    # print(len(test_en_targets), len(train_en_targets), len(test_es_targets), len(train_es_targets))
-    # exit(1)
 
 
     # set embedding dim size (must match glove file...)
@@ -374,12 +382,6 @@ if __name__ == "__main__":
     tokenizer = Tokenizer(num_words=5000) #28987
     tokenizer.fit_on_texts(train_en_input)
 
-    # print(tokenizer.word_index)
-    # with open('huh.txt', 'w') as f:
-    #     for item in tokenizer.word_index:
-    #         f.write("%s " % item)
-    #
-    # exit(1)
 
     # convert sentences to integers (tokens)
     train_en_input = tokenizer.texts_to_sequences(train_en_input)
@@ -403,7 +405,48 @@ if __name__ == "__main__":
     print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
 
     # Create the model
-    model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
+    # model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
+
+    # ///////////////////
+
+    # hyper vals
+    epochs = 20
+    output_file = 'params.txt'
+
+    # Parameter grid for grid search
+    param_grid = dict(num_filters=[32, 64, 128],
+                      kernel_size=[3, 5, 7],
+                      vocab_size=[vocab_size],
+                      embedding_dim=[embedding_dim],
+                      maxlen=[sentence_len])
+
+    model = KerasClassifier(build_fn=create_model_hyper_tuning,
+                            epochs=epochs, batch_size=10,
+                            verbose=False)
+
+
+
+    grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
+                              cv=4, verbose=1, n_iter=5)
+
+    grid_result = grid.fit(train_en_input, train_en_targets)
+
+    test_accuracy = grid.score(test_en_input, test_en_targets)
+
+    with open(output_file, 'a') as f:
+        s = ('Running {} data set\nBest Accuracy : '
+             '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
+        output_string = s.format(
+            source,
+            grid_result.best_score_,
+            grid_result.best_params_,
+            test_accuracy)
+        print(output_string)
+        f.write(output_string)
+
+    # ///////////////////
+
+    exit(2)
 
     # summarize model architecture
     model.summary()
