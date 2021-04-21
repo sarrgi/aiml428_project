@@ -30,10 +30,22 @@ Finally run the script.
 - and run: ```./demo.sh``` in console
 
 
+##### Corpus breakdown:
+- original glove file: 51.73
+- full_corp_min_1 : **76.56**
+- full_corp_min_2 : **60.86**
+- full_corp_min_3 : **57.49**
+- full_corp_min_4 : **55.37**
+- full_corp_min_5 : **53.65**
+- train_only_100_min_1 : **74.19**
+- train_only_100_min_2 : 29.7
+- train_only_100_min_3 : 19.64
+- train_only_100_min_4 : 14.88
+- train_only_100_min_5 : 11.96
+
+
 
 Instructions
-
-
 
 ### Part 1
 
@@ -62,6 +74,13 @@ Slight changes made to baseline method:
 
 
 ### Part 3:
+
+##### pre-processing:
+- https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-981-15-5558-9_17
+- Tweet Classification Using Deep Learning Approach to Predict Sensitive Personal Data
+![pre](images/paper-preprocessing.jpg)
+
+
 
 ##### obvious issues:
 - overtraining on data

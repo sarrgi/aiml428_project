@@ -173,8 +173,6 @@ def read_data(location):
     return all_tweets
 
 
-
-
 def create_targets(input, truth_table):
     """
     Create targets for an input array based on it's respective truth table.
@@ -221,6 +219,9 @@ def flatten_input(input):
 
 
 def flatten_targets(targets, repeat_len):
+    """
+    Flatten targets into a 1d array.
+    """
     size = len(targets) * repeat_len
     flat = np.zeros((size, 3), dtype=np.int64)
 
@@ -231,7 +232,6 @@ def flatten_targets(targets, repeat_len):
             idx += 1
 
     return flat
-
 
 
 def get_longest_input(input_arr):
@@ -246,6 +246,28 @@ def get_longest_input(input_arr):
 
     return max
 
+
+def to_lower(input):
+    """Convert a 2d input array to all lower case."""
+    for i in range(len(input)):
+        input[i] = input[i].lower()
+
+    return input
+
+
+def remove_urls(input):
+    """
+    Convert all instances of urls to the word url.
+    """
+    for i in range(len(input)):
+        input[i] = re.sub(r"http\S+", "url", input[i])
+
+    return input
+
+
+
+
+
 if __name__ == "__main__":
     # gpu log check
     print(tf.config.list_physical_devices('GPU'))
@@ -255,8 +277,6 @@ if __name__ == "__main__":
     # read in data
     test_en = read_data("data/pandata/test/en/*.xml")[:100]
     train_en = read_data("data/pandata/train/en/*.xml")[:100]
-
-
 
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
@@ -274,6 +294,23 @@ if __name__ == "__main__":
     test_en_targets = flatten_targets(test_en_targets, len(test_en[0]))
     train_en_targets = flatten_targets(train_en_targets, len(train_en[0]))
 
+    # set all tweets to lower case
+    test_en_input = to_lower(test_en_input)
+    train_en_input = to_lower(train_en_input)
+
+    # remove urls
+    test_en_input = remove_urls(test_en_input)
+    train_en_input = remove_urls(train_en_input)
+    # exit(1)
+
+    # ideas:
+
+
+    # remove stopwords
+    # remove emojis
+    # remove punctuation
+
+
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
@@ -284,30 +321,11 @@ if __name__ == "__main__":
     # exit(1)
 
 
-    # split test into validation and test
-    # test_en_input, val_en_input, test_en_targets, val_en_targets = train_test_split(test_en_input, test_en_targets, test_size=0.5, random_state=1000)
-    # split = int(len(test_en_input)/2)
-    # test_en_input_1 = test_en_input[:split]
-    # val_en_input = test_en_input[split:]
-    # test_en_targets_1 = test_en_targets[:split]
-    # val_en_targets = test_en_targets[split:]
-
-    # print(len(test_en_input_1))
-    # print("-")
-    # print(len(val_en_input))
-    # print("-")
-    # print(len(test_en_targets_1))
-    # print("-")
-    # print(len(val_en_targets))
-    # print("-")
-
-
-
     # set embedding dim size (must match glove file...)
     embedding_dim = 50
 
     # create tokenizer (note: num_words specifies the top n words to keep)
-    tokenizer = Tokenizer(num_words=28987)
+    tokenizer = Tokenizer(num_words=5000) #28987
     tokenizer.fit_on_texts(train_en_input)
 
     # print(tokenizer.word_index)
@@ -330,7 +348,7 @@ if __name__ == "__main__":
 
     # load the pretrained glove model into a matrix (file stored locally)
     # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-    embedding_matrix = create_embedding_matrix("glove/full_corp_min_1.txt",
+    embedding_matrix = create_embedding_matrix("glove/train_only_100_min_1.txt",
                                                tokenizer.word_index,
                                                embedding_dim,
                                                vocab_size)
