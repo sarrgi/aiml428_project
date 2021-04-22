@@ -332,6 +332,11 @@ def remove_stopwords(input):
     return input
 
 
+def fix_stemming(input):
+
+    return input
+
+
 def remove_punctuation(input):
     """
     Remove all punctuation from input.
@@ -402,6 +407,8 @@ if __name__ == "__main__":
     train_en_input = remove_punctuation(train_en_input)
 
     # remove/convert emojis
+
+    # stemming words
 
 
 
