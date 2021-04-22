@@ -11,6 +11,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import tensorflow as tf
+import string
 try:
     import cPickle as pickle
 except:
@@ -23,6 +24,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
+from sklearn import model_selection
 
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -99,7 +101,7 @@ def plot_history(history):
     plt.show()
 
 
-def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
+def create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, sentence_len, word_vecs):
     """
     Define the model architecture here.
     """
@@ -110,10 +112,10 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
                                 input_length=sentence_len,
                                 weights=[word_vecs],
                                 trainable=True))
-    model.add(layers.Conv1D(128, 5, activation='relu'))
+    model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
-    model.add(layers.Dense(10, activation='relu'))
-    model.add(layers.Dropout(0.1))
+    model.add(layers.Dense(hidden, activation='relu'))
+    model.add(layers.Dropout(0.5))
     model.add(layers.Dense(3, activation='sigmoid'))
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
@@ -122,7 +124,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
 
 
 
-def create_model_hyper_tuning(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
+def create_model_hyper_tuning(num_filters, kernel_size, hidden, vocab_size, embedding_dim, maxlen):
     model = Sequential()
     model.add(layers.Embedding(
         vocab_size,
@@ -132,7 +134,7 @@ def create_model_hyper_tuning(num_filters, kernel_size, vocab_size, embedding_di
         trainable=True))
     model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
-    model.add(layers.Dense(10, activation='relu'))
+    model.add(layers.Dense(hidden, activation='relu'))
     model.add(layers.Dropout(0.1))
     model.add(layers.Dense(3, activation='sigmoid'))
     model.compile(optimizer='adam',
@@ -330,10 +332,21 @@ def remove_stopwords(input):
     return input
 
 
+def remove_punctuation(input):
+    """
+    Remove all punctuation from input.
+    """
+    for i in range(len(input)):
+        input[i] = str(input[i]).translate(str.maketrans('', '', string.punctuation))
+
+    return input
+
 if __name__ == "__main__":
     # required downloads to make nltk stopwords library work
     nltk.download('punkt')
     nltk.download('stopwords')
+
+    # ////////////////////////////////////////////// read in and store data //////////////////////////////////////////////
 
     # gpu log check
     print(tf.config.list_physical_devices('GPU'))
@@ -341,8 +354,8 @@ if __name__ == "__main__":
     print(tf.test.is_built_with_cuda())
 
     # read in data
-    test_en = read_data("data/pandata/test/en/*.xml")[:100]
-    train_en = read_data("data/pandata/train/en/*.xml")[:100]
+    test_en = read_data("data/pandata/test/en/*.xml")
+    train_en = read_data("data/pandata/train/en/*.xml")
 
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
@@ -353,13 +366,19 @@ if __name__ == "__main__":
     train_en_targets = create_targets(train_en, en_train_truth)
 
     # flatten input
-    # np.array()
     test_en_input = flatten_input(test_en)
     train_en_input = flatten_input(train_en)
 
     # flatten targets
     test_en_targets = flatten_targets(test_en_targets, len(test_en[0]))
     train_en_targets = flatten_targets(train_en_targets, len(train_en[0]))
+
+    # randomly extract a small part of dataset for testing (too expensive to run the whole dataset)
+    train_en_input, _, train_en_targets, _ = model_selection.train_test_split(train_en_input, train_en_targets, train_size=0.1, shuffle=True)
+    _, test_en_input, _, test_en_targets = model_selection.train_test_split(test_en_input, test_en_targets, test_size=0.1, shuffle=True)
+
+
+    # ////////////////////////////////////////////// pre processing //////////////////////////////////////////////
 
     # set all tweets to lower case
     test_en_input = to_lower(test_en_input)
@@ -378,17 +397,19 @@ if __name__ == "__main__":
     test_en_input = remove_stopwords(test_en_input)
     train_en_input = remove_stopwords(train_en_input)
 
-    # ideas:
-
-    # remove emojis
     # remove punctuation
-    # convert slang
+    test_en_input = remove_punctuation(test_en_input)
+    train_en_input = remove_punctuation(train_en_input)
+
+    # remove/convert emojis
+
+
+    # ////////////////////////////////////////////// get input ready for model //////////////////////////////////////////////
 
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
     sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
-
 
     # set embedding dim size (must match glove file...)
     embedding_dim = 50
@@ -396,7 +417,6 @@ if __name__ == "__main__":
     # create tokenizer (note: num_words specifies the top n words to keep)
     tokenizer = Tokenizer(num_words=10000) #28987
     tokenizer.fit_on_texts(train_en_input)
-
 
     # convert sentences to integers (tokens)
     train_en_input = tokenizer.texts_to_sequences(train_en_input)
@@ -416,71 +436,58 @@ if __name__ == "__main__":
                                                embedding_dim,
                                                vocab_size)
 
+    # nasty fix to work around could not clone error when passing word_vecs
+    set_global_word_vecs(embedding_matrix)
+    #
+    # Calculate the amount of words covered by GloVe
+    print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
+    #
+
+    # ////////////////////////////////////////////// hyper paramter tuning //////////////////////////////////////////////
+
+    # Parameter grid for grid search
+    param_grid = dict(num_filters=[32, 64, 128, 256],
+                      kernel_size=[3, 5, 7],
+                      hidden=[10, 20, 30, 40, 50],
+                      vocab_size=[vocab_size],
+                      embedding_dim=[embedding_dim],
+                      maxlen=[sentence_len],
+                      )
+
+    model = KerasClassifier(build_fn=create_model_hyper_tuning,
+                            epochs=10,
+                            batch_size=10,
+                            verbose=False)
 
 
+    grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
+                              cv=4, verbose=1, n_iter=1)
 
+    grid_result = grid.fit(train_en_input, train_en_targets)
 
-    # # nasty fix to work around could not clone error when passing word_vecs
-    # set_global_word_vecs(embedding_matrix)
-    # #
-    # # Calculate the amount of words covered by GloVe
-    # print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
-    # #
-    #
-    #
-    # # ///////////////////
-    #
-    # # hyper vals
-    # epochs = 10
-    # output_file = 'params.txt'
-    #
-    # # Parameter grid for grid search
-    # param_grid = dict(num_filters=[32, 64, 128],
-    #                   kernel_size=[3, 5, 7],
-    #                   vocab_size=[vocab_size],
-    #                   embedding_dim=[embedding_dim],
-    #                   maxlen=[sentence_len],
-    #                   )
-    #
-    # model = KerasClassifier(build_fn=create_model_hyper_tuning,
-    #                         epochs=epochs,
-    #                         batch_size=10,
-    #                         verbose=False)
-    #
-    #
-    #
-    # grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
-    #                           cv=4, verbose=1, n_iter=1)
-    #
-    # grid_result = grid.fit(train_en_input, train_en_targets)
-    #
-    # test_accuracy = grid.score(test_en_input, test_en_targets)
-    #
-    # with open(output_file, 'a') as f:
-    #     s = ('Best Accuracy : '
-    #          '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
-    #     output_string = s.format(
-    #         grid_result.best_score_,
-    #         grid_result.best_params_,
-    #         test_accuracy)
-    #     print(output_string)
-    #     f.write(output_string)
-    #
-    # # ///////////////////
-    #
-    # exit(2)
+    test_accuracy = grid.score(test_en_input, test_en_targets)
 
-    # print(grid_result.best_params_)
+    # get values back out of grid
+    vocab_size = grid_result.best_params_['vocab_size']
+    num_filters = grid_result.best_params_['num_filters']
+    kernel_size = grid_result.best_params_['kernel_size']
+    hidden = grid_result.best_params_['hidden']
 
+    print("Best vocab_size:", vocab_size)
+    print("Best num_filters:", num_filters)
+    print("Best kernel_size:", kernel_size)
+    print("Best hidden_size:", hidden)
 
-    # Create the model
-    model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
+    # ////////////////////////////////////////////// run and evaluate model //////////////////////////////////////////////
+
+    # Create the model using best params
+    model = create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, sentence_len, embedding_matrix)
 
     # summarize model architecture
     model.summary()
 
     # train the model
-    history = model.fit(train_en_input, train_en_targets, epochs=10, verbose=True, validation_data=(test_en_input, test_en_targets), batch_size=10)
+    history = model.fit(train_en_input, train_en_targets, epochs=30, verbose=True, validation_split = 0.2, batch_size=10)
 
     # evaluate model
     evaluate_model(model, train_en_input, train_en_targets, test_en_input, test_en_targets)

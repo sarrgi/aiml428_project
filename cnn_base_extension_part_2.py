@@ -278,8 +278,8 @@ if __name__ == "__main__":
     print(tf.test.is_built_with_cuda())
 
     # read in data
-    test_en = read_data("data/pandata/test/en/*.xml")[:100]
-    train_en = read_data("data/pandata/train/en/*.xml")[:100]
+    test_en = read_data("data/pandata/test/en/*.xml")
+    train_en = read_data("data/pandata/train/en/*.xml")
     # test_es = read_data("data/pandata/test/es/*.xml")
     # train_es = read_data("data/pandata/train/es/*.xml")
 
@@ -306,6 +306,11 @@ if __name__ == "__main__":
     train_en_targets = flatten_targets(train_en_targets, len(train_en[0]))
     # test_es_targets = flatten_targets(test_es_targets, len(test_es[0]))
     # train_es_targets = flatten_targets(train_es_targets, len(train_es[0]))
+
+
+    train_en_input, _, train_en_targets, _ = model_selection.train_test_split(train_en_input, train_en_targets, train_size=0.1, shuffle=True)
+    _, test_en_input, _, test_en_targets = model_selection.train_test_split(test_en_input, test_en_targets, test_size=0.1, shuffle=True)
+
 
     # get longest tweet
     max_tweet = get_longest_input(test_en + train_en)
