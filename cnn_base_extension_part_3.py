@@ -32,6 +32,17 @@ from tensorflow.keras import layers
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
+
+global_word_vecs = "-1"
+def set_global_word_vecs(val):
+    """
+    Nasty fix to work around could not clone error when passing word_vecs.
+    """
+    global global_word_vecs
+    global_word_vecs = val
+
+
+
 def create_embedding_matrix(filepath, word_index, embedding_dim, vocab_size):
     """
     Create the embedding matrix using the pre-trained glove file.
@@ -91,7 +102,6 @@ def plot_history(history):
 def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
     """
     Define the model architecture here.
-    Currently using the structure from: https://realpython.com/python-keras-text-classification/.
     """
     model = Sequential()
     model.add(layers.Embedding(
@@ -100,7 +110,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
                                 input_length=sentence_len,
                                 weights=[word_vecs],
                                 trainable=True))
-    model.add(layers.Conv1D(128, 5, activation='relu'))
+    model.add(layers.Conv1D(64, 3, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dropout(0.1))
@@ -114,7 +124,12 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
 
 def create_model_hyper_tuning(num_filters, kernel_size, vocab_size, embedding_dim, maxlen):
     model = Sequential()
-    model.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
+    model.add(layers.Embedding(
+        vocab_size,
+        embedding_dim,
+        input_length=maxlen,
+        weights=[global_word_vecs],
+        trainable=True))
     model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
@@ -326,8 +341,8 @@ if __name__ == "__main__":
     print(tf.test.is_built_with_cuda())
 
     # read in data
-    test_en = read_data("data/pandata/test/en/*.xml") [:500]
-    train_en = read_data("data/pandata/train/en/*.xml") [:500]
+    test_en = read_data("data/pandata/test/en/*.xml")[:100]
+    train_en = read_data("data/pandata/train/en/*.xml")[:100]
 
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
@@ -379,7 +394,7 @@ if __name__ == "__main__":
     embedding_dim = 50
 
     # create tokenizer (note: num_words specifies the top n words to keep)
-    tokenizer = Tokenizer(num_words=5000) #28987
+    tokenizer = Tokenizer(num_words=10000) #28987
     tokenizer.fit_on_texts(train_en_input)
 
 
@@ -401,16 +416,21 @@ if __name__ == "__main__":
                                                embedding_dim,
                                                vocab_size)
 
+
+
+    # nasty fix to work around could not clone error when passing word_vecs
+    set_global_word_vecs(embedding_matrix)
+    #
     # Calculate the amount of words covered by GloVe
     print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
-
-    # Create the model
+    #
+    # # Create the model
     # model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
 
     # ///////////////////
 
     # hyper vals
-    epochs = 20
+    epochs = 10
     output_file = 'params.txt'
 
     # Parameter grid for grid search
@@ -418,26 +438,27 @@ if __name__ == "__main__":
                       kernel_size=[3, 5, 7],
                       vocab_size=[vocab_size],
                       embedding_dim=[embedding_dim],
-                      maxlen=[sentence_len])
+                      maxlen=[sentence_len],
+                      )
 
     model = KerasClassifier(build_fn=create_model_hyper_tuning,
-                            epochs=epochs, batch_size=10,
+                            epochs=epochs,
+                            batch_size=10,
                             verbose=False)
 
 
 
     grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
-                              cv=4, verbose=1, n_iter=5)
+                              cv=4, verbose=1, n_iter=1)
 
     grid_result = grid.fit(train_en_input, train_en_targets)
 
     test_accuracy = grid.score(test_en_input, test_en_targets)
 
     with open(output_file, 'a') as f:
-        s = ('Running {} data set\nBest Accuracy : '
+        s = ('Best Accuracy : '
              '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
         output_string = s.format(
-            source,
             grid_result.best_score_,
             grid_result.best_params_,
             test_accuracy)
