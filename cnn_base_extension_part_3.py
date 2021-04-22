@@ -110,7 +110,7 @@ def create_model(vocab_size, embedding_dim, sentence_len, word_vecs):
                                 input_length=sentence_len,
                                 weights=[word_vecs],
                                 trainable=True))
-    model.add(layers.Conv1D(64, 3, activation='relu'))
+    model.add(layers.Conv1D(128, 5, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
     model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dropout(0.1))
@@ -418,56 +418,63 @@ if __name__ == "__main__":
 
 
 
-    # nasty fix to work around could not clone error when passing word_vecs
-    set_global_word_vecs(embedding_matrix)
+
+
+    # # nasty fix to work around could not clone error when passing word_vecs
+    # set_global_word_vecs(embedding_matrix)
+    # #
+    # # Calculate the amount of words covered by GloVe
+    # print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
+    # #
     #
-    # Calculate the amount of words covered by GloVe
-    print("Percent of vocabulary covered by GloVe:", calculate_nonzero(embedding_matrix, vocab_size))
     #
-    # # Create the model
-    # model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
+    # # ///////////////////
+    #
+    # # hyper vals
+    # epochs = 10
+    # output_file = 'params.txt'
+    #
+    # # Parameter grid for grid search
+    # param_grid = dict(num_filters=[32, 64, 128],
+    #                   kernel_size=[3, 5, 7],
+    #                   vocab_size=[vocab_size],
+    #                   embedding_dim=[embedding_dim],
+    #                   maxlen=[sentence_len],
+    #                   )
+    #
+    # model = KerasClassifier(build_fn=create_model_hyper_tuning,
+    #                         epochs=epochs,
+    #                         batch_size=10,
+    #                         verbose=False)
+    #
+    #
+    #
+    # grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
+    #                           cv=4, verbose=1, n_iter=1)
+    #
+    # grid_result = grid.fit(train_en_input, train_en_targets)
+    #
+    # test_accuracy = grid.score(test_en_input, test_en_targets)
+    #
+    # with open(output_file, 'a') as f:
+    #     s = ('Best Accuracy : '
+    #          '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
+    #     output_string = s.format(
+    #         grid_result.best_score_,
+    #         grid_result.best_params_,
+    #         test_accuracy)
+    #     print(output_string)
+    #     f.write(output_string)
+    #
+    # # ///////////////////
+    #
+    # exit(2)
 
-    # ///////////////////
-
-    # hyper vals
-    epochs = 10
-    output_file = 'params.txt'
-
-    # Parameter grid for grid search
-    param_grid = dict(num_filters=[32, 64, 128],
-                      kernel_size=[3, 5, 7],
-                      vocab_size=[vocab_size],
-                      embedding_dim=[embedding_dim],
-                      maxlen=[sentence_len],
-                      )
-
-    model = KerasClassifier(build_fn=create_model_hyper_tuning,
-                            epochs=epochs,
-                            batch_size=10,
-                            verbose=False)
+    # print(grid_result.best_params_)
 
 
-
-    grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
-                              cv=4, verbose=1, n_iter=1)
-
-    grid_result = grid.fit(train_en_input, train_en_targets)
-
-    test_accuracy = grid.score(test_en_input, test_en_targets)
-
-    with open(output_file, 'a') as f:
-        s = ('Best Accuracy : '
-             '{:.4f}\n{}\nTest Accuracy : {:.4f}\n\n')
-        output_string = s.format(
-            grid_result.best_score_,
-            grid_result.best_params_,
-            test_accuracy)
-        print(output_string)
-        f.write(output_string)
-
-    # ///////////////////
-
-    exit(2)
+    # Create the model
+    model = create_model(vocab_size, embedding_dim, sentence_len, embedding_matrix)
 
     # summarize model architecture
     model.summary()

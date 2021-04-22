@@ -14,3 +14,7 @@ Best Accuracy : 0.5240
 {'vocab_size': 4859, 'num_filters': 64, 'maxlen': 400, 'kernel_size': 3, 'embedding_dim': 50}
 Test Accuracy : 0.1600
 
+Best Accuracy : 0.5509
+{'vocab_size': 19645, 'num_filters': 64, 'maxlen': 1000, 'kernel_size': 5, 'embedding_dim': 50}
+Test Accuracy : 0.4567
+
