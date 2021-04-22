@@ -327,7 +327,7 @@ def remove_stopwords(input):
         # convert back to single sentence
         complete_sentence = " ".join(filtered_sentence)
         # store
-        input[i] = filtered_sentence
+        input[i] = complete_sentence
 
     return input
 
@@ -337,7 +337,7 @@ def remove_punctuation(input):
     Remove all punctuation from input.
     """
     for i in range(len(input)):
-        input[i] = str(input[i]).translate(str.maketrans('', '', string.punctuation))
+        input[i] = re.sub(r"[^\w\s]", "", input[i])
 
     return input
 
@@ -404,6 +404,7 @@ if __name__ == "__main__":
     # remove/convert emojis
 
 
+
     # ////////////////////////////////////////////// get input ready for model //////////////////////////////////////////////
 
     # get longest tweet
@@ -431,7 +432,7 @@ if __name__ == "__main__":
 
     # load the pretrained glove model into a matrix (file stored locally)
     # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-    embedding_matrix = create_embedding_matrix("glove/glove.6B.50d.txt",
+    embedding_matrix = create_embedding_matrix("glove/full_corp_min_2.txt",
                                                tokenizer.word_index,
                                                embedding_dim,
                                                vocab_size)

@@ -1,4 +1,4 @@
-import cnn_base_extension as base
+import cnn_base_extension_part_3 as base
 from itertools import chain
 import re
 
@@ -15,13 +15,33 @@ if __name__ == "__main__":
 
     # create one list
     all_in = train_en + test_en
-    flattened = list(chain.from_iterable(all_in))
+    # flattened = list(chain.from_iterable(all_in))
+
+    # flatten
+    all_in_flattened = base.flatten_input(all_in)
+
+    # lowercase
+    all_in_flattened = base.to_lower(all_in_flattened)
+
+    # remove urls
+    all_in_flattened = base.remove_urls(all_in_flattened)
+
+    # remove mentions
+    all_in_flattened = base.convert_mentions(all_in_flattened)
+
+    # remove stop words
+    all_in_flattened = base.remove_stopwords(all_in_flattened)
+
+    # remove stop words
+    all_in_flattened = base.remove_punctuation(all_in_flattened)
+
+    # remove punctuation
+    # flattened = base.remove_punctuation(flattened)
+    flattened = list(chain.from_iterable(all_in_flattened))
 
     # create single string
     big_str = "".join(flattened)
 
-    # convert to lower case
-    big_str = big_str.lower()
 
     # split into list of unique words
     # all_words = re.split("[\w']+|[.,!?;]", big_str)
@@ -29,12 +49,17 @@ if __name__ == "__main__":
     # unique = list(set(all_words))
 
 
-    # print(len(unique), len(all_words))
-    # print(all_words[:50])
+    # # print(len(unique), len(all_words))
+    print(all_words[:500])
+
+    print("---")
+    print(len(all_words[0]), all_words[0])
     # print("---")
     # print(big_str[:500])
     # print("---")
     # print(unique[:500])
+
+    # exit(1)
 
     # # write to file
     with open('full_pandata_corpus.txt', 'w') as f:
