@@ -35,6 +35,11 @@ if __name__ == "__main__":
     # remove stop words
     all_in_flattened = base.remove_punctuation(all_in_flattened)
 
+    # stem check
+    all_in_flattened = base.fix_stemming(all_in_flattened)
+
+    exit(1)
+
     # remove punctuation
     # flattened = base.remove_punctuation(flattened)
     flattened = list(chain.from_iterable(all_in_flattened))

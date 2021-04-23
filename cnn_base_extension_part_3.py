@@ -10,6 +10,8 @@ from itertools import chain
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from nltk.stem.snowball import SnowballStemmer
 import tensorflow as tf
 import string
 try:
@@ -234,7 +236,6 @@ def create_targets(input, truth_table):
 
         # check target found and store if so
         if targ == "not found":
-            print(file)
             raise create_targets("err", "err")
         else:
             if targ == "male":
@@ -333,6 +334,20 @@ def remove_stopwords(input):
 
 
 def fix_stemming(input):
+    """
+    Handle stemming words using nltk's PorterStemmer.
+    """
+    stemmer = PorterStemmer()
+    # stemmer = SnowballStemmer("english")
+
+    for i in range(len(input)):
+        # stem
+        word_tokens = word_tokenize(input[i])
+        stemmed_sentence = [stemmer.stem(w) for w in word_tokens]
+        # convert back to single sentence
+        complete_sentence = " ".join(stemmed_sentence)
+        # store
+        input[i] = complete_sentence
 
     return input
 
@@ -409,6 +424,8 @@ if __name__ == "__main__":
     # remove/convert emojis
 
     # stemming words
+    test_en_input = fix_stemming(test_en_input)
+    train_en_input = fix_stemming(train_en_input)
 
 
 
