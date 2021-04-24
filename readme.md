@@ -1,5 +1,5 @@
 
-### Step 1
+## Step 1
 
 - This baseline method is based off of the one found in [this](https://realpython.com/python-keras-text-classification/) tutorial.
 - This uses the pre-trained glove.6B.50d model, which is stored locally to run. The current file path for this is "glove/glove.6B.50d.txt" which may need to be adjusted/downloaded to run on a different machine.
@@ -9,29 +9,33 @@
 
 This can be run with ```python cnn_base.py``` in the console.
 
-### Step 2:
+## Step 2:
 
-The dataset used for this is the PAN author profiling [dataset](https://pan.webis.de/clef19/pan19-web/author-profiling.html). Note: for the sake of time this model is only being tested on 10% of files in the pandata dataset. While a small percentage of the data, this should be be around ~70,000 tweets.
+The dataset used for this is the PAN author profiling [dataset](https://pan.webis.de/clef19/pan19-web/author-profiling.html). Note: for the sake of time this model is only being tested on 10% of files in the pandata dataset. While a small percentage of the data, this should be around ~70,000 tweets which is a reasonable amount.
 
 As the baseline method datasets only had two classes, some very slight changes had to made to run the baseline method on the new dataset:
   - Model is now using ```categorical_crossentropy``` as the loss function, due to there now being three classes (```binary_crossentropy``` would no longer make sense).
   - Output layer in model is now of size 3, reflective of this new loss function.
   - split test data into validation and test data (so model isnt learning via test)
 
-<!-- ##### Performance (no val):
-![performance_part_2](images/part2_performance_no_val_split.png)
 
-<!-- ##### Performance (val):
-![performance_part_2](images/part2_performance_val_split.png) -->
+  To run this model on the current dataset:
+  - ```python cnn_base_extension_part_2.py``` in console
 
-<!-- ##### Model:
-![model_part_2](images/part2_model.png) --> -->
+## Step 3:
 
 
+#### How to run:
 
-### Step 3:
+To run this model on the current dataset:
+- ```python cnn_base_extension_part_3.py``` in console
+
+To run this model on the old dataset(s):
+- ```python cnn_base_extension_part_3_old_data.py``` in console
 
 
+
+### Key Changes for Step 3:
 
 #### Training GloVe on a custom corpus
 
@@ -52,21 +56,13 @@ Finally run the script.
 
 
 #### Data pre-processing:
-- https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-981-15-5558-9_17
-- Tweet Classification Using Deep Learning Approach to Predict Sensitive Personal Data
-
-
-
-- https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-3-030-60975-7_2
-- NLTK package for stop words
-We applied lower casing and removed punctuation, stopwords, urls and mentions
 
 There wasn't any proper pre-processing done with the original model, so this was crucial to tackle.
-I found two papers which used twitter data to see what pre-processing practices they used.
+I found a paper which used twitter data to see what pre-processing practices they used.
 
 Paper 1: [Tweet Classification Using Deep Learning Approach to Predict Sensitive Personal Data](https://link.springer.com/chapter/10.1007%2F978-3-030-60975-7_2)
-"""
-steps applied:
+
+Steps they applied:
 - lower casing
 - removed punctuation
 - removed stopwords
@@ -74,41 +70,48 @@ steps applied:
 - removed mentions.
 - applied stemming
 
-Paper 2: ***TODO: FIND PAPER***
-![pre](images/paper-preprocessing.jpg)
+Paper 2: [Tweet Classification Using Deep Learning Approach to Predict Sensitive Personal Dat](https://link-springer-com.helicon.vuw.ac.nz/chapter/10.1007%2F978-981-15-5558-9_17)
+
+Steps they applied:
+- lowercasing
+- removing punctuation
+- replaced urls with URL
+- removed stop words
+- applied stemming
+- removed numbers
+- replaced acronyms
 
 Steps I took:
-
 - converted text to lower case
 - converted urls to "url"
+    - I decided to keep this as tagging people in tweets can be indicative of a bot.
 - removed stop words
 - removed punctuation
-- replaced user names with "username"
+- replaced mentions (@username) with "username"
+    - I decided to keep this as tagging people in tweets can be indicative of a bot.
 
-Steps to check:
-- remove numbers
-- removal/emoji conversion
-- stemming
+I also used nltk's stemming libraries, but in the end this step was not included in the final model.
+Mainly due to needing to re-run the GloVe model to account for stemmed words, but also due to not seeing a noticeable difference in performance.
 
 
 #### Hyper-Parameter Tuning
 
 One area I explored was auto tuning hyper paramters for the model. This was done by implementing a random search method which automatically tests the specified paramters. These values can be found and tweaked in the ```param_grid``` dictionary.
 
-The best paramters found with random search are then stored and ran on the model. Possibly a redundant step to re-test as there model is essentially unchanged, but this allows me to get epoch by epoch output, exclusively from the best model.
+The best paramters found with random search are then stored and ran on the model. Possibly a redundant step to re-test as there model is essentially unchanged, but this allows me to get epoch by epoch output, exclusively from the best model, as well as give extra epochs etc.
 
-Paramters currently being automatically tuned:
-- Dense Layer Size
-- Convolution Layer Kernel Size
-- Convolution Layer Filter Size
-
+Parameters currently being automatically tuned:
+- Dense Layer's Size
+- Convolution Layer's Kernel Size
+- Convolution Layer's Filter Size
 
 
 #### Model Architecture:
 
-- added dropout layer to help combat overfitting
+Changes from baseline:
 
-
-
-
-##### Performance:
+I've made this model similar to that used by LeNet and AlexNet, some older CNN's which where used for image classification.
+This involved:
+- Adding dropout layers to help combat overfitting
+- Adding extra convolution layer
+- Added extra dense layer

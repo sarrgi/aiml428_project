@@ -28,6 +28,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from sklearn import model_selection
 
+from tensorflow.keras import optimizers
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.backend import clear_session
@@ -103,7 +104,7 @@ def plot_history(history):
     plt.show()
 
 
-def create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, sentence_len, word_vecs):
+def create_model(conv1_filter, conv1_kernel, conv2_filter, conv2_kernel, dense1, dense2, vocab_size, embedding_dim, sentence_len, word_vecs):
     """
     Define the model architecture here.
     """
@@ -114,19 +115,31 @@ def create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, se
                                 input_length=sentence_len,
                                 weights=[word_vecs],
                                 trainable=True))
-    model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
+    # conv layer 1
+    model.add(layers.Conv1D(conv1_filter, conv1_kernel, activation='relu'))
+    model.add(layers.MaxPooling1D())
+    model.add(layers.BatchNormalization())
+    # conv layer 2
+    model.add(layers.Conv1D(conv2_filter, conv2_kernel, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
-    model.add(layers.Dense(hidden, activation='relu'))
+    model.add(layers.BatchNormalization())
+    # dense 1
+    model.add(layers.Dense(dense1, activation='relu'))
     model.add(layers.Dropout(0.5))
+    # dense 2
+    model.add(layers.Dense(dense2, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    # final layer
     model.add(layers.Dense(3, activation='sigmoid'))
-    model.compile(optimizer='adam',
+    opt = optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     return model
 
 
 
-def create_model_hyper_tuning(num_filters, kernel_size, hidden, vocab_size, embedding_dim, maxlen):
+def create_model_hyper_tuning(conv1_filter, conv1_kernel, conv2_filter, conv2_kernel, dense1, dense2, vocab_size, embedding_dim, maxlen):
     model = Sequential()
     model.add(layers.Embedding(
         vocab_size,
@@ -134,12 +147,24 @@ def create_model_hyper_tuning(num_filters, kernel_size, hidden, vocab_size, embe
         input_length=maxlen,
         weights=[global_word_vecs],
         trainable=True))
-    model.add(layers.Conv1D(num_filters, kernel_size, activation='relu'))
+    # conv layer 1
+    model.add(layers.Conv1D(conv1_filter, conv1_kernel, activation='relu'))
+    model.add(layers.MaxPooling1D())
+    # model.add(layers.BatchNormalization())
+    # conv layer 2
+    model.add(layers.Conv1D(conv2_filter, conv2_kernel, activation='relu'))
     model.add(layers.GlobalMaxPooling1D())
-    model.add(layers.Dense(hidden, activation='relu'))
-    model.add(layers.Dropout(0.1))
+    # model.add(layers.BatchNormalization())
+    # dense 1
+    model.add(layers.Dense(dense1, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    # dense 2
+    model.add(layers.Dense(dense2, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    # final layer
     model.add(layers.Dense(3, activation='sigmoid'))
-    model.compile(optimizer='adam',
+    opt = optimizers.Adam(learning_rate=0.001)
+    model.compile(optimizer=opt,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     return model
@@ -395,7 +420,7 @@ if __name__ == "__main__":
 
     # randomly extract a small part of dataset for testing (too expensive to run the whole dataset)
     train_en_input, _, train_en_targets, _ = model_selection.train_test_split(train_en_input, train_en_targets, train_size=0.1, shuffle=True)
-    _, test_en_input, _, test_en_targets = model_selection.train_test_split(test_en_input, test_en_targets, test_size=0.1, shuffle=True)
+    _, test_en_input, _, test_en_targets = model_selection.train_test_split(test_en_input, test_en_targets, test_size=0.2, shuffle=True)
 
 
     # ////////////////////////////////////////////// pre processing //////////////////////////////////////////////
@@ -424,8 +449,8 @@ if __name__ == "__main__":
     # remove/convert emojis
 
     # stemming words
-    test_en_input = fix_stemming(test_en_input)
-    train_en_input = fix_stemming(train_en_input)
+    # test_en_input = fix_stemming(test_en_input)
+    # train_en_input = fix_stemming(train_en_input)
 
 
 
@@ -456,7 +481,7 @@ if __name__ == "__main__":
 
     # load the pretrained glove model into a matrix (file stored locally)
     # r"D:\UNI\Fourth Year\AIML428\glove.6B\glove.6B.50d.txt"
-    embedding_matrix = create_embedding_matrix("glove/full_corp_min_2.txt",
+    embedding_matrix = create_embedding_matrix("glove/full_corp_min_1.txt",
                                                tokenizer.word_index,
                                                embedding_dim,
                                                vocab_size)
@@ -471,9 +496,12 @@ if __name__ == "__main__":
     # ////////////////////////////////////////////// hyper paramter tuning //////////////////////////////////////////////
 
     # Parameter grid for grid search
-    param_grid = dict(num_filters=[32, 64, 128, 256],
-                      kernel_size=[3, 5, 7],
-                      hidden=[10, 20, 30, 40, 50],
+    param_grid = dict(conv1_filter=[64, 128, 256, 512],
+                      conv2_filter=[32, 64, 128, 256, 512],
+                      conv1_kernel=[5, 7, 9, 11],
+                      conv2_kernel=[3, 5, 7],
+                      dense1=[10, 30, 50, 100, 200, 500, 1000],
+                      dense2=[10, 30, 50, 100, 200, 500, 1000],
                       vocab_size=[vocab_size],
                       embedding_dim=[embedding_dim],
                       maxlen=[sentence_len],
@@ -493,26 +521,31 @@ if __name__ == "__main__":
     test_accuracy = grid.score(test_en_input, test_en_targets)
 
     # get values back out of grid
-    vocab_size = grid_result.best_params_['vocab_size']
-    num_filters = grid_result.best_params_['num_filters']
-    kernel_size = grid_result.best_params_['kernel_size']
-    hidden = grid_result.best_params_['hidden']
+    conv1_filter = grid_result.best_params_['conv1_filter']
+    conv2_filter = grid_result.best_params_['conv2_filter']
+    conv1_kernel = grid_result.best_params_['conv1_kernel']
+    conv2_kernel = grid_result.best_params_['conv2_kernel']
+    dense1 = grid_result.best_params_['dense1']
+    dense2 = grid_result.best_params_['dense2']
 
-    print("Best vocab_size:", vocab_size)
-    print("Best num_filters:", num_filters)
-    print("Best kernel_size:", kernel_size)
-    print("Best hidden_size:", hidden)
+    print("Best conv1_filter:", conv1_filter)
+    print("Best conv2_filter:", conv2_filter)
+    print("Best conv1_kernel:", conv1_kernel)
+    print("Best conv2_kernel:", conv2_kernel)
+    print("Best dense1:", dense1)
+    print("Best dense2:", dense2)
 
     # ////////////////////////////////////////////// run and evaluate model //////////////////////////////////////////////
 
     # Create the model using best params
-    model = create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, sentence_len, embedding_matrix)
+    model = create_model(conv1_filter, conv1_kernel, conv2_filter, conv2_kernel, dense1, dense2, vocab_size, embedding_dim, sentence_len, embedding_matrix)
+    # model = create_model(num_filters, kernel_size, hidden, vocab_size, embedding_dim, sentence_len, embedding_matrix)
 
     # summarize model architecture
     model.summary()
 
     # train the model
-    history = model.fit(train_en_input, train_en_targets, epochs=30, verbose=True, validation_split = 0.2, batch_size=10)
+    history = model.fit(train_en_input, train_en_targets, epochs=20, verbose=True, validation_split = 0.1, batch_size=10)
 
     # evaluate model
     evaluate_model(model, train_en_input, train_en_targets, test_en_input, test_en_targets)

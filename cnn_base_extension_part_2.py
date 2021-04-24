@@ -280,32 +280,22 @@ if __name__ == "__main__":
     # read in data
     test_en = read_data("data/pandata/test/en/*.xml")
     train_en = read_data("data/pandata/train/en/*.xml")
-    # test_es = read_data("data/pandata/test/es/*.xml")
-    # train_es = read_data("data/pandata/train/es/*.xml")
 
     # read in truth tables
     en_test_truth = parse_truth_table("data/pandata/truth-tables/en-test.txt")
     en_train_truth =  parse_truth_table("data/pandata/truth-tables/en-truth.txt")
-    # es_test_truth = parse_truth_table("data/pandata/truth-tables/es-test.txt")
-    # es_train_truth =  parse_truth_table("data/pandata/truth-tables/es-truth.txt")
 
     # create targets array
     test_en_targets = create_targets(test_en, en_test_truth)
     train_en_targets = create_targets(train_en, en_train_truth)
-    # test_es_targets = create_targets(test_es, es_test_truth)
-    # train_es_targets = create_targets(train_es, es_train_truth)
 
     # flatten input
     test_en_input = np.array(flatten_input(test_en))
     train_en_input = np.array(flatten_input(train_en))
-    # test_es_input = np.array(flatten_input(test_es))
-    # train_es_input = np.array(flatten_input(train_es))
 
     # flatten targets
     test_en_targets = flatten_targets(test_en_targets, len(test_en[0]))
     train_en_targets = flatten_targets(train_en_targets, len(train_en[0]))
-    # test_es_targets = flatten_targets(test_es_targets, len(test_es[0]))
-    # train_es_targets = flatten_targets(train_es_targets, len(train_es[0]))
 
 
     train_en_input, _, train_en_targets, _ = model_selection.train_test_split(train_en_input, train_en_targets, train_size=0.1, shuffle=True)
@@ -316,30 +306,6 @@ if __name__ == "__main__":
     max_tweet = get_longest_input(test_en + train_en)
     # set length to pad sentences to (zeros at end of vector) (round to next hundred)
     sentence_len = int(math.ceil(max_tweet / 100.0)) * 100
-
-    # print(len(test_en_input), len(train_en_input), len(test_es_input), len(train_es_input))
-    # print(len(test_en_targets), len(train_en_targets), len(test_es_targets), len(train_es_targets))
-    # exit(1)
-
-
-    # split test into validation and test
-    # test_en_input, val_en_input, test_en_targets, val_en_targets = train_test_split(test_en_input, test_en_targets, test_size=0.5, random_state=1000)
-    # split = int(len(test_en_input)/2)
-    # test_en_input_1 = test_en_input[:split]
-    # val_en_input = test_en_input[split:]
-    # test_en_targets_1 = test_en_targets[:split]
-    # val_en_targets = test_en_targets[split:]
-
-    # print(len(test_en_input_1))
-    # print("-")
-    # print(len(val_en_input))
-    # print("-")
-    # print(len(test_en_targets_1))
-    # print("-")
-    # print(len(val_en_targets))
-    # print("-")
-
-
 
     # set embedding dim size (must match glove file...)
     embedding_dim = 50

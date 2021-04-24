@@ -1,5 +1,6 @@
 /glove/
-/data/pandata/
+/data/pandata/test/es
+/data/pandata/train/es
 /data/pandata.zip
 /__pycache__/
 full_pandata_corpus.txt
