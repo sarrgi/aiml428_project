@@ -1,3 +1,5 @@
+#### Note: This submission doesn't include all the GloVe files used as they were too large for submission system. They are available on my google drive and laptop for in person marking. If this is still an issue I can find some way to send them to you. 
+
 
 ## Step 1
 
